@@ -1,38 +1,19 @@
 from functools import wraps
 from flask import request, jsonify
-import jwt
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 import os
 
 def jwt_required(f):
     """
-    Decorador para proteger rutas con JWT
+    Decorador para proteger rutas con JWT usando Flask-JWT-Extended
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        token = None
-        
-        # Obtener token del header Authorization
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            try:
-                token = auth_header.split(" ")[1]  # "Bearer <token>"
-            except IndexError:
-                return jsonify({'error': 'Token malformado'}), 401
-        
-        if not token:
-            return jsonify({'error': 'Token requerido'}), 401
-        
         try:
-            # Decodificar el token
-            secret_key = os.getenv('JWT_SECRET_KEY', 'patitas-bog-jwt-secret')
-            data = jwt.decode(token, secret_key, algorithms=['HS256'])
-            request.current_user = data
-        except jwt.ExpiredSignatureError:
-            return jsonify({'error': 'Token expirado'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'error': 'Token inválido'}), 401
-        
-        return f(*args, **kwargs)
+            verify_jwt_in_request()
+            return f(*args, **kwargs)
+        except Exception as e:
+            return jsonify({'error': 'Token inválido o expirado', 'message': str(e)}), 401
     
     return decorated_function
 
@@ -40,4 +21,12 @@ def get_current_user():
     """
     Obtener el usuario actual desde el token JWT
     """
-    return getattr(request, 'current_user', None)
+    try:
+        user_id = get_jwt_identity()
+        claims = get_jwt()
+        return {
+            'user_id': user_id,
+            'claims': claims
+        }
+    except Exception:
+        return None

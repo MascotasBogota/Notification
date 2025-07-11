@@ -34,12 +34,10 @@ class Notification(Document):
     message = StringField(required=True, max_length=500)
     
     # Datos del avistamiento (sin datos personales del usuario que reportó)
-    sighting_data = {
-        'description': StringField(),
-        'location': PointField(),
-        'images': ListField(StringField()),
-        'sighting_time': DateTimeField()
-    }
+    sighting_description = StringField()
+    sighting_location = PointField()
+    sighting_images = ListField(StringField())
+    sighting_time = DateTimeField()
     
     # Estado de la notificación
     is_read = BooleanField(default=False)
@@ -65,10 +63,10 @@ class Notification(Document):
             'title': self.title,
             'message': self.message,
             'sighting_data': {
-                'description': self.sighting_data.get('description'),
-                'location': self.sighting_data.get('location'),
-                'images': self.sighting_data.get('images', []),
-                'sighting_time': self.sighting_data.get('sighting_time').isoformat() if self.sighting_data.get('sighting_time') else None
+                'description': self.sighting_description,
+                'location': self.sighting_location,
+                'images': self.sighting_images or [],
+                'sighting_time': self.sighting_time.isoformat() if self.sighting_time else None
             },
             'is_read': self.is_read,
             'created_at': self.created_at.isoformat(),

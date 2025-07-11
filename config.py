@@ -1,5 +1,9 @@
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 class Config:
     """Configuración base."""
@@ -7,6 +11,9 @@ class Config:
     MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/patitas-bog'
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'patitas-bog-jwt-secret'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    
+    # Configuración del servidor
+    PORT = int(os.environ.get('PORT', 5010))
     
     # Configuración de notificaciones
     NOTIFICATIONS_PER_PAGE = 10

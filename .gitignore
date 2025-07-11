@@ -148,3 +148,5 @@ uploads/
 
 # Docker
 .dockerignore
+
+diagnose.py

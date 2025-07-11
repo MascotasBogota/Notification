@@ -1,5 +1,9 @@
 from flask_restx import Api
+from flask_jwt_extended import JWTManager
 from mongoengine import connect
+
+# Configurar JWT
+jwt = JWTManager()
 
 authorizations = {
     'Bearer Auth': {
