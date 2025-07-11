@@ -14,12 +14,10 @@ class TestNotificationModel:
             notification_type='avistamiento',
             title='Nuevo avistamiento',
             message='Se ha registrado un nuevo avistamiento',
-            sighting_data={
-                'description': 'Vi a la mascota en el parque',
-                'location': [-74.0721, 4.7110],
-                'images': ['http://example.com/image1.jpg'],
-                'sighting_time': datetime.utcnow()
-            }
+            sighting_description='Vi a la mascota en el parque',
+            sighting_location=[-74.0721, 4.7110],
+            sighting_images=['http://example.com/image1.jpg'],
+            sighting_time=datetime.utcnow()
         )
         
         # Verificar
@@ -41,12 +39,10 @@ class TestNotificationModel:
             notification_type='avistamiento',
             title='Nuevo avistamiento',
             message='Se ha registrado un nuevo avistamiento',
-            sighting_data={
-                'description': 'Vi a la mascota en el parque',
-                'location': [-74.0721, 4.7110],
-                'images': ['http://example.com/image1.jpg'],
-                'sighting_time': sighting_time
-            }
+            sighting_description='Vi a la mascota en el parque',
+            sighting_location=[-74.0721, 4.7110],
+            sighting_images=['http://example.com/image1.jpg'],
+            sighting_time=sighting_time
         )
         
         # Ejecutar

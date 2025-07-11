@@ -51,12 +51,10 @@ class NotificationService:
                 notification_type=notification_type,
                 title=title,
                 message=message,
-                sighting_data={
-                    'description': response_data.get('comment'),
-                    'location': response_data.get('location'),
-                    'images': response_data.get('images', []),
-                    'sighting_time': response_data.get('created_at', datetime.utcnow())
-                }
+                sighting_description=response_data.get('comment'),
+                sighting_location=response_data.get('location'),
+                sighting_images=response_data.get('images', []),
+                sighting_time=response_data.get('created_at', datetime.utcnow())
             )
             
             notification.save()
