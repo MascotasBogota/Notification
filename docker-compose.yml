@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  notifications-api:
+    build: .
+    container_name: patitas-bog-notifications
+    ports:
+      - "5060:5060"
+    environment:
+      - FLASK_ENV=production
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - REPORTS_SERVICE_URL=${REPORTS_SERVICE_URL:-http://localhost:5050}
+      - USERS_SERVICE_URL=${USERS_SERVICE_URL:-http://localhost:5000}
+    depends_on:
+      - mongodb
+    networks:
+      - patitas-bog-network
+
+  mongodb:
+    image: mongo:6.0
+    container_name: patitas-bog-mongo-notifications
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - patitas-bog-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  patitas-bog-network:
+    driver: bridge
