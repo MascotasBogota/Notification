@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager
 from config import DevelopmentConfig
 from src.extensions import api, init_db, jwt
 from src.routes.notification_routes import ns as notifications_ns
+from src.utils.telemetry import init_telemetry
 import os
 
 def create_app(config_class=DevelopmentConfig):
@@ -16,6 +17,7 @@ def create_app(config_class=DevelopmentConfig):
 
     # Inicializa base de datos y API Swagger
     init_db(app)
+    init_telemetry(app)
     api.init_app(app)
 
     # Registra los endpoints de /notifications
