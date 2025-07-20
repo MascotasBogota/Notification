@@ -97,11 +97,10 @@ class NotificationWebhook(Resource):
 @ns.route('/<string:notification_id>')
 class NotificationResource(Resource):
     @ns.doc('get_notification', security='Bearer Auth')
-    @ns.marshal_with(ns.model('SingleNotificationResponse', {
+    @ns.response(200, 'Notificación obtenida exitosamente', ns.model('SingleNotificationResponse', {
         'success': fields.Boolean(required=True),
         'data': fields.Nested(notification_model)
     }))
-    @ns.response(200, 'Notificación obtenida exitosamente')
     @ns.response(404, 'Notificación no encontrada')
     @ns.response(401, 'Token requerido o inválido')
     @ns.response(500, 'Error interno del servidor')
@@ -149,8 +148,7 @@ class NotificationReadAll(Resource):
 @ns.route('/unread-count')
 class NotificationUnreadCount(Resource):
     @ns.doc('get_unread_count', security='Bearer Auth')
-    @ns.marshal_with(unread_count_model)
-    @ns.response(200, 'Conteo obtenido exitosamente')
+    @ns.response(200, 'Conteo obtenido exitosamente', unread_count_model)
     @ns.response(401, 'Token requerido o inválido')
     @ns.response(500, 'Error interno del servidor')
     def get(self):

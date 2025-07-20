@@ -155,3 +155,6 @@ diagnose.py
 simple_webhook_test.py
 test_direct_notifications.py
 test_webhook.py
+test_individual.py
+test_webhook_real.py
+test_webhook_simple.py
