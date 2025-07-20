@@ -58,13 +58,13 @@ class TestNotificationControllerSimple:
             assert response[1] == 400
             assert 'error' in response[0].data.decode()
     
-    @patch('src.controllers.notification_controller.get_current_user')
-    @patch('src.controllers.notification_controller.verify_jwt_in_request')
-    def test_get_unread_count_success(self, mock_verify_jwt, mock_get_user):
+    @patch('src.utils.auth.verify_jwt_in_request')
+    @patch('src.utils.auth.get_jwt_identity')
+    def test_get_unread_count_success(self, mock_get_jwt_identity, mock_verify_jwt):
         """Test obtener conteo de notificaciones no leídas"""
         # Configurar mocks
         mock_verify_jwt.return_value = None  # JWT válido
-        mock_get_user.return_value = self.mock_user
+        mock_get_jwt_identity.return_value = 'test_user_123'
         
         with self.app.test_request_context():
             with patch('src.controllers.notification_controller.notification_service') as mock_service:

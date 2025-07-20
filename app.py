@@ -4,8 +4,16 @@ from flask_jwt_extended import JWTManager
 from config import DevelopmentConfig
 from src.extensions import api, init_db, jwt
 from src.routes.notification_routes import ns as notifications_ns
-from src.utils.telemetry import init_telemetry
 import os
+
+# Importar telemetría de forma opcional
+try:
+    from src.utils.telemetry import init_telemetry
+    TELEMETRY_AVAILABLE = True
+except ImportError as e:
+    TELEMETRY_AVAILABLE = False
+    print("⚠️  Telemetría no disponible - continuando sin telemetría")
+    print(f"   Error: {str(e)}")
 
 def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
@@ -17,7 +25,15 @@ def create_app(config_class=DevelopmentConfig):
 
     # Inicializa base de datos y API Swagger
     init_db(app)
-    init_telemetry(app)
+    
+    # Inicializar telemetría solo si está disponible
+    if TELEMETRY_AVAILABLE:
+        try:
+            init_telemetry(app)
+            print("✅ Telemetría inicializada correctamente")
+        except Exception as e:
+            print(f"⚠️  Error inicializando telemetría: {str(e)}")
+    
     api.init_app(app)
 
     # Registra los endpoints de /notifications
