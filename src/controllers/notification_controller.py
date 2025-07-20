@@ -139,24 +139,138 @@ class NotificationController:
             notification_id: ID de la notificación
         """
         try:
+            print(f"🔍 GET /notifications/{notification_id} - Iniciando")
+            
             current_user = get_current_user()
             user_id = current_user.get('user_id')
+            print(f"🔑 Usuario: {user_id}")
             
             # Obtener notificación
+            print(f"🔄 Buscando notificación {notification_id} para usuario {user_id}")
             notification = notification_service.get_notification_by_id(notification_id, user_id)
             
             if not notification:
-                return jsonify({'error': 'Notificación no encontrada'}), 404
+                print("❌ Notificación no encontrada")
+                return {'error': 'Notificación no encontrada'}, 404
             
-            return jsonify({
-                'success': True,
-                'data': notification.to_dict()
-            }), 200
+            print(f"✅ Notificación encontrada: {notification}")
+            print(f"📊 Tipo de notificación: {type(notification)}")
+            
+            # Serialización manual paso a paso para debug
+            try:
+                notification_dict = {}
+                
+                # ID
+                notification_dict['id'] = str(notification.id) if notification.id else None
+                print(f"✅ ID serializado: {notification_dict['id']}")
+                
+                # Campos básicos
+                notification_dict['user_id'] = notification.user_id
+                notification_dict['report_id'] = notification.report_id
+                notification_dict['response_id'] = notification.response_id
+                notification_dict['notification_type'] = notification.notification_type
+                
+                # Title con manejo especial
+                if hasattr(notification, 'title') and notification.title:
+                    if isinstance(notification.title, bytes):
+                        notification_dict['title'] = notification.title.decode('utf-8')
+                    else:
+                        notification_dict['title'] = str(notification.title)
+                else:
+                    notification_dict['title'] = None
+                print(f"✅ Title serializado: {notification_dict['title']}")
+                
+                # Message con manejo especial
+                if hasattr(notification, 'message') and notification.message:
+                    if isinstance(notification.message, bytes):
+                        notification_dict['message'] = notification.message.decode('utf-8')
+                    else:
+                        notification_dict['message'] = str(notification.message)
+                else:
+                    notification_dict['message'] = None
+                print(f"✅ Message serializado: {notification_dict['message']}")
+                
+                # Sighting data
+                sighting_data = {}
+                if hasattr(notification, 'sighting_data') and notification.sighting_data:
+                    try:
+                        sd = notification.sighting_data
+                        sighting_data['description'] = str(sd.get('description', '')) if sd.get('description') else None
+                        sighting_data['location'] = sd.get('location') if sd.get('location') else None
+                        sighting_data['images'] = sd.get('images', []) if sd.get('images') else []
+                        
+                        # Sighting time
+                        sighting_time = sd.get('sighting_time')
+                        if sighting_time and hasattr(sighting_time, 'isoformat'):
+                            sighting_data['sighting_time'] = sighting_time.isoformat()
+                        elif sighting_time:
+                            sighting_data['sighting_time'] = str(sighting_time)
+                        else:
+                            sighting_data['sighting_time'] = None
+                    except Exception as e:
+                        print(f"⚠️ Error procesando sighting_data: {e}")
+                        sighting_data = {
+                            'description': None,
+                            'location': None,
+                            'images': [],
+                            'sighting_time': None
+                        }
+                else:
+                    sighting_data = {
+                        'description': None,
+                        'location': None,
+                        'images': [],
+                        'sighting_time': None
+                    }
+                
+                notification_dict['sighting_data'] = sighting_data
+                print(f"✅ Sighting data serializado")
+                
+                # Campos finales
+                notification_dict['is_read'] = bool(notification.is_read) if hasattr(notification, 'is_read') else False
+                
+                # Created at
+                if hasattr(notification, 'created_at') and notification.created_at:
+                    if hasattr(notification.created_at, 'isoformat'):
+                        notification_dict['created_at'] = notification.created_at.isoformat()
+                    else:
+                        notification_dict['created_at'] = str(notification.created_at)
+                else:
+                    notification_dict['created_at'] = None
+                
+                # Read at
+                if hasattr(notification, 'read_at') and notification.read_at:
+                    if hasattr(notification.read_at, 'isoformat'):
+                        notification_dict['read_at'] = notification.read_at.isoformat()
+                    else:
+                        notification_dict['read_at'] = str(notification.read_at)
+                else:
+                    notification_dict['read_at'] = None
+                
+                print(f"✅ Notificación completamente serializada")
+                print(f"📤 Datos finales: {notification_dict}")
+                
+                return {
+                    'success': True,
+                    'data': notification_dict
+                }, 200
+                
+            except Exception as e:
+                print(f"❌ Error en serialización: {e}")
+                print(f"❌ Tipo de error: {type(e)}")
+                import traceback
+                traceback.print_exc()
+                return {'error': f'Error en serialización: {str(e)}'}, 500
             
         except NotificationServiceError as e:
-            return jsonify({'error': str(e)}), 400
+            print(f"❌ Error del servicio: {e}")
+            return {'error': str(e)}, 400
         except Exception as e:
-            return jsonify({'error': 'Error interno del servidor'}), 500
+            print(f"❌ Error interno: {e}")
+            print(f"❌ Tipo de error: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            return {'error': 'Error interno del servidor'}, 500
     
     @staticmethod
     @jwt_required
@@ -175,17 +289,17 @@ class NotificationController:
             success = notification_service.mark_notification_as_read(notification_id, user_id)
             
             if not success:
-                return jsonify({'error': 'Notificación no encontrada'}), 404
+                return {'error': 'Notificación no encontrada'}, 404
             
-            return jsonify({
+            return {
                 'success': True,
                 'message': 'Notificación marcada como leída'
-            }), 200
+            }, 200
             
         except NotificationServiceError as e:
-            return jsonify({'error': str(e)}), 400
+            return {'error': str(e)}, 400
         except Exception as e:
-            return jsonify({'error': 'Error interno del servidor'}), 500
+            return {'error': 'Error interno del servidor'}, 500
     
     @staticmethod
     @jwt_required
@@ -223,17 +337,17 @@ class NotificationController:
             # Obtener conteo
             count = notification_service.get_unread_count(user_id)
             
-            return jsonify({
+            return {
                 'success': True,
                 'data': {
                     'unread_count': count
                 }
-            }), 200
+            }, 200
             
         except NotificationServiceError as e:
-            return jsonify({'error': str(e)}), 400
+            return {'error': str(e)}, 400
         except Exception as e:
-            return jsonify({'error': 'Error interno del servidor'}), 500
+            return {'error': 'Error interno del servidor'}, 500
     
     @staticmethod
     def create_notification():
@@ -262,7 +376,7 @@ class NotificationController:
             # Validar datos requeridos
             if not data or not all(key in data for key in ['report_id', 'response_id', 'response_data']):
                 print("❌ Datos faltantes en webhook")
-                return jsonify({'error': 'Datos requeridos: report_id, response_id, response_data'}), 400
+                return {'error': 'Datos requeridos: report_id, response_id, response_data'}, 400
             
             print(f"📊 Report ID: {data['report_id']}")
             print(f"📊 Response ID: {data['response_id']}")
@@ -293,16 +407,16 @@ class NotificationController:
             
             print(f"📤 Devolviendo respuesta: {notification_dict}")
             
-            return jsonify({
+            return {
                 'success': True,
                 'message': 'Notificación creada exitosamente',
                 'data': notification_dict
-            }), 201
+            }, 201
             
         except NotificationServiceError as e:
             print(f"❌ Error del servicio: {str(e)}")
-            return jsonify({'error': str(e)}), 400
+            return {'error': str(e)}, 400
         except Exception as e:
             print(f"❌ Error interno: {str(e)}")
             print(f"❌ Tipo de error: {type(e)}")
-            return jsonify({'error': 'Error interno del servidor'}), 500
+            return {'error': 'Error interno del servidor'}, 500
