@@ -61,12 +61,11 @@ unread_count_model = ns.model('UnreadCount', {
 
 @ns.route('/')
 class NotificationList(Resource):
-    @ns.doc('get_user_notifications')
+    @ns.doc('get_user_notifications', security='Bearer Auth')
     @ns.param('page', 'Número de página', type=int, default=1)
     @ns.param('per_page', 'Elementos por página', type=int, default=10)
     @ns.param('unread_only', 'Solo notificaciones no leídas', type=bool, default=False)
-    @ns.marshal_with(notifications_response_model)
-    @ns.response(200, 'Notificaciones obtenidas exitosamente')
+    @ns.response(200, 'Notificaciones obtenidas exitosamente', notifications_response_model)
     @ns.response(400, 'Parámetros inválidos')
     @ns.response(401, 'Token requerido o inválido')
     @ns.response(500, 'Error interno del servidor')
@@ -97,7 +96,7 @@ class NotificationWebhook(Resource):
 
 @ns.route('/<string:notification_id>')
 class NotificationResource(Resource):
-    @ns.doc('get_notification')
+    @ns.doc('get_notification', security='Bearer Auth')
     @ns.marshal_with(ns.model('SingleNotificationResponse', {
         'success': fields.Boolean(required=True),
         'data': fields.Nested(notification_model)
@@ -118,7 +117,7 @@ class NotificationResource(Resource):
 
 @ns.route('/<string:notification_id>/read')
 class NotificationRead(Resource):
-    @ns.doc('mark_notification_as_read')
+    @ns.doc('mark_notification_as_read', security='Bearer Auth')
     @ns.response(200, 'Notificación marcada como leída')
     @ns.response(404, 'Notificación no encontrada')
     @ns.response(401, 'Token requerido o inválido')
@@ -134,7 +133,7 @@ class NotificationRead(Resource):
 
 @ns.route('/read-all')
 class NotificationReadAll(Resource):
-    @ns.doc('mark_all_notifications_as_read')
+    @ns.doc('mark_all_notifications_as_read', security='Bearer Auth')
     @ns.response(200, 'Todas las notificaciones marcadas como leídas')
     @ns.response(401, 'Token requerido o inválido')
     @ns.response(500, 'Error interno del servidor')
@@ -149,7 +148,7 @@ class NotificationReadAll(Resource):
 
 @ns.route('/unread-count')
 class NotificationUnreadCount(Resource):
-    @ns.doc('get_unread_count')
+    @ns.doc('get_unread_count', security='Bearer Auth')
     @ns.marshal_with(unread_count_model)
     @ns.response(200, 'Conteo obtenido exitosamente')
     @ns.response(401, 'Token requerido o inválido')
@@ -242,3 +241,22 @@ class CreateTestToken(Resource):
                 'message': 'Error creando token',
                 'error': str(e)
             }, 500
+
+@ns.route('/debug/request-headers')
+class RequestHeadersDebug(Resource):
+    @ns.doc('debug_request_headers')
+    def get(self):
+        """Debug: Mostrar todos los headers de la petición"""
+        headers_dict = dict(request.headers)
+        
+        return {
+            'message': 'Headers de la petición',
+            'headers': headers_dict,
+            'authorization_header': request.headers.get('Authorization'),
+            'method': request.method,
+            'url': request.url,
+            'path': request.path,
+            'query_params': dict(request.args),
+            'user_agent': request.headers.get('User-Agent'),
+            'content_type': request.headers.get('Content-Type')
+        }
