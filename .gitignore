@@ -150,3 +150,8 @@ uploads/
 .dockerignore
 
 diagnose.py
+
+
+simple_webhook_test.py
+test_direct_notifications.py
+test_webhook.py

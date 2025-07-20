@@ -13,7 +13,13 @@ def jwt_required(f):
             verify_jwt_in_request()
             return f(*args, **kwargs)
         except Exception as e:
-            return jsonify({'error': 'Token inválido o expirado', 'message': str(e)}), 401
+            print(f"❌ JWT Error: {str(e)}")
+            return {
+                'success': False,
+                'error': 'Token JWT requerido o inválido',
+                'message': str(e),
+                'data': None
+            }, 401
     
     return decorated_function
 

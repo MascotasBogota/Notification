@@ -54,6 +54,17 @@ class Notification(Document):
     
     def to_dict(self):
         """Convertir a diccionario para serialización"""
+        # Manejar sighting_location que puede ser un objeto PointField
+        location_data = None
+        if self.sighting_location:
+            if hasattr(self.sighting_location, 'coordinates'):
+                location_data = {
+                    'type': 'Point',
+                    'coordinates': self.sighting_location.coordinates
+                }
+            else:
+                location_data = self.sighting_location
+        
         return {
             'id': str(self.id),
             'user_id': self.user_id,
@@ -64,11 +75,11 @@ class Notification(Document):
             'message': self.message,
             'sighting_data': {
                 'description': self.sighting_description,
-                'location': self.sighting_location,
+                'location': location_data,
                 'images': self.sighting_images or [],
                 'sighting_time': self.sighting_time.isoformat() if self.sighting_time else None
             },
             'is_read': self.is_read,
-            'created_at': self.created_at.isoformat(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
             'read_at': self.read_at.isoformat() if self.read_at else None
         }

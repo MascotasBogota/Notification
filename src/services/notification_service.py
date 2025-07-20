@@ -92,18 +92,73 @@ class NotificationService:
                 .skip((page - 1) * per_page)\
                 .limit(per_page)
             
-            # Convertir a diccionarios
-            notifications_data = [notification.to_dict() for notification in notifications]
+            print(f"🔍 Query ejecutada: {query}")
+            print(f"🔍 Total encontrado: {total}")
+            print(f"🔍 Notificaciones raw: {list(notifications)}")
             
-            return {
+            # Convertir a diccionarios manualmente (más robusto)
+            notifications_data = []
+            for notification in notifications:
+                try:
+                    # Convertir manualmente para evitar problemas de serialización
+                    notification_dict = {
+                        'id': str(notification.id),
+                        'user_id': str(notification.user_id),
+                        'report_id': str(notification.report_id),
+                        'response_id': str(notification.response_id),
+                        'notification_type': str(notification.notification_type),
+                        'title': str(notification.title),
+                        'message': str(notification.message),
+                        'sighting_data': {
+                            'description': str(notification.sighting_description) if notification.sighting_description else None,
+                            'location': self._serialize_location(notification.sighting_location),
+                            'images': list(notification.sighting_images) if notification.sighting_images else [],
+                            'sighting_time': notification.sighting_time.isoformat() if notification.sighting_time else None
+                        },
+                        'is_read': bool(notification.is_read),
+                        'created_at': notification.created_at.isoformat() if notification.created_at else None,
+                        'read_at': notification.read_at.isoformat() if notification.read_at else None
+                    }
+                    notifications_data.append(notification_dict)
+                    print(f"✅ Notificación convertida: {notification_dict['id']}")
+                except Exception as e:
+                    print(f"❌ Error convirtiendo notificación {notification.id}: {e}")
+            
+            result = {
                 'notifications': notifications_data,
                 'pagination': {
-                    'page': page,
-                    'per_page': per_page,
-                    'total': total,
-                    'pages': (total + per_page - 1) // per_page
+                    'page': int(page),
+                    'per_page': int(per_page),
+                    'total': int(total),
+                    'pages': int((total + per_page - 1) // per_page)
                 }
             }
+            
+            print(f"📦 Resultado final del servicio: Total items={len(notifications_data)}")
+            return result
+            
+        except Exception as e:
+            print(f"❌ Error en get_user_notifications: {e}")
+            raise NotificationServiceError(f"Error al obtener notificaciones: {str(e)}")
+    
+    def _serialize_location(self, location):
+        """Serializar ubicación de forma segura"""
+        if not location:
+            return None
+        
+        try:
+            if hasattr(location, 'coordinates'):
+                return {
+                    'type': 'Point',
+                    'coordinates': list(location.coordinates)
+                }
+            elif isinstance(location, dict):
+                return location
+            else:
+                return None
+        except Exception as e:
+            print(f"⚠️ Error serializando location: {e}")
+            return None
             
         except Exception as e:
             raise NotificationServiceError(f"Error al obtener notificaciones: {str(e)}")
@@ -210,13 +265,16 @@ class NotificationService:
         """
         try:
             # Llamar al servicio de reportes para obtener información del reporte
-            response = requests.get(f"{self.reports_service_url}/reports/{report_id}")
+            response = requests.get(f"{self.reports_service_url}/reports/public/{report_id}")
             
             if response.status_code == 200:
                 report_data = response.json()
-                return report_data.get('user_id')
+                user_id = report_data.get('user_id')
+                if not user_id:
+                    raise NotificationServiceError(f"No se encontró user_id en el reporte {report_id}")
+                return user_id
             else:
-                raise NotificationServiceError(f"No se pudo obtener información del reporte {report_id}")
+                raise NotificationServiceError(f"No se pudo obtener información del reporte {report_id}. Status: {response.status_code}")
                 
         except requests.RequestException as e:
             raise NotificationServiceError(f"Error al conectar con el servicio de reportes: {str(e)}")

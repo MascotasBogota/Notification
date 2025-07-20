@@ -65,8 +65,7 @@ class NotificationList(Resource):
     @ns.param('page', 'Número de página', type=int, default=1)
     @ns.param('per_page', 'Elementos por página', type=int, default=10)
     @ns.param('unread_only', 'Solo notificaciones no leídas', type=bool, default=False)
-    @ns.marshal_with(notifications_response_model)
-    @ns.response(200, 'Notificaciones obtenidas exitosamente')
+    @ns.response(200, 'Notificaciones obtenidas exitosamente', notifications_response_model)
     @ns.response(400, 'Parámetros inválidos')
     @ns.response(401, 'Token requerido o inválido')
     @ns.response(500, 'Error interno del servidor')
@@ -134,7 +133,7 @@ class NotificationRead(Resource):
 
 @ns.route('/read-all')
 class NotificationReadAll(Resource):
-    @ns.doc('mark_all_notifications_as_read')
+    @ns.doc('mark_all_notifications_as_read', security='Bearer Auth')
     @ns.response(200, 'Todas las notificaciones marcadas como leídas')
     @ns.response(401, 'Token requerido o inválido')
     @ns.response(500, 'Error interno del servidor')
