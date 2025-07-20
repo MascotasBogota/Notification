@@ -1,5 +1,8 @@
+from flask import request
 from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 from src.controllers.notification_controller import NotificationController
+import os
 
 # Namespace para las notificaciones
 ns = Namespace('notifications', description='Operaciones relacionadas con notificaciones de avistamientos')
@@ -159,3 +162,83 @@ class NotificationUnreadCount(Resource):
         Útil para mostrar badges o indicadores en la interfaz.
         """
         return NotificationController.get_unread_count()
+
+@ns.route('/debug/jwt')
+class JWTDebug(Resource):
+    @ns.doc('debug_jwt', description='Debug de configuración JWT')
+    def get(self):
+        """Endpoint de debug para verificar configuración JWT"""
+        auth_header = request.headers.get('Authorization')
+        
+        debug_info = {
+            'jwt_secret_configured': bool(os.environ.get('JWT_SECRET_KEY')),
+            'jwt_secret_length': len(os.environ.get('JWT_SECRET_KEY', '')),
+            'auth_header_present': bool(auth_header),
+            'auth_header_format': 'Bearer token' if auth_header and auth_header.startswith('Bearer ') else 'Invalid or missing',
+            'environment': os.environ.get('FLASK_ENV', 'not_set'),
+            'token_length': len(auth_header.replace('Bearer ', '')) if auth_header and auth_header.startswith('Bearer ') else 0
+        }
+        
+        return {
+            'message': 'JWT Debug Information',
+            'debug': debug_info
+        }, 200
+
+@ns.route('/debug/jwt-validate')
+class JWTValidate(Resource):
+    @ns.doc('validate_jwt', description='Validar JWT token')
+    def get(self):
+        """Validar JWT token y mostrar información"""
+        try:
+            # Intentar verificar JWT
+            verify_jwt_in_request()
+            user_id = get_jwt_identity()
+            jwt_claims = get_jwt()
+            
+            return {
+                'message': 'JWT válido',
+                'user_id': user_id,
+                'jwt_claims': {
+                    'exp': jwt_claims.get('exp'),
+                    'iat': jwt_claims.get('iat'),
+                    'sub': jwt_claims.get('sub'),
+                    'type': jwt_claims.get('type')
+                }
+            }, 200
+            
+        except Exception as e:
+            return {
+                'message': 'JWT inválido',
+                'error': str(e),
+                'error_type': type(e).__name__
+            }, 401
+
+@ns.route('/debug/create-test-token')
+class CreateTestToken(Resource):
+    @ns.doc('create_test_token', description='Crear token de prueba (solo para desarrollo)')
+    def post(self):
+        """Crear un token JWT de prueba para testing"""
+        try:
+            from flask_jwt_extended import create_access_token
+            from datetime import timedelta
+            
+            # Crear token para usuario de prueba
+            test_user_id = "test_user_123"
+            token = create_access_token(
+                identity=test_user_id,
+                expires_delta=timedelta(hours=1)
+            )
+            
+            return {
+                'message': 'Token de prueba creado',
+                'token': token,
+                'user_id': test_user_id,
+                'expires_in': '1 hour',
+                'usage': f'Bearer {token}'
+            }, 200
+            
+        except Exception as e:
+            return {
+                'message': 'Error creando token',
+                'error': str(e)
+            }, 500

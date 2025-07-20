@@ -22,11 +22,22 @@ def get_current_user():
     Obtener el usuario actual desde el token JWT
     """
     try:
+        # Intentar obtener user_id con get_jwt_identity() (para tokens con 'sub')
         user_id = get_jwt_identity()
-        claims = get_jwt()
+        
+        # Si no hay user_id, intentar obtenerlo desde claims con 'userId' (compatibilidad)
+        if not user_id:
+            claims = get_jwt()
+            user_id = claims.get('userId')
+        
+        # Si aún no hay user_id, usar 'sub' directamente de claims
+        if not user_id:
+            claims = get_jwt()
+            user_id = claims.get('sub')
+            
         return {
             'user_id': user_id,
-            'claims': claims
+            'claims': get_jwt()
         }
     except Exception:
         return None

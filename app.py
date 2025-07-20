@@ -20,6 +20,10 @@ def create_app(config_class=DevelopmentConfig):
     app.config.from_object(config_class)
     CORS(app)  # Habilita CORS para la aplicación
 
+    # Inicializar configuración con debug
+    if hasattr(config_class, 'init_app'):
+        config_class.init_app(app)
+
     # Inicializar JWT
     jwt.init_app(app)
 
